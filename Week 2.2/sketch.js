@@ -3,19 +3,21 @@ let timer = 0;
 let statusStoplicht = "groen";
 
 function keyPressed() {
-  // Code to run.
-  console.log("key is pressed");
-  if (statusStoplicht == "groen") {
-    statusStoplicht = "oranje";
-    return;
-  }
-  if (statusStoplicht == "oranje") {
-    statusStoplicht = "rood";
-    return;
-  }
-  if (statusStoplicht == "rood") {
-    statusStoplicht = "groen";
-    return;
+  if (key == "m") {
+    // Code to run.
+    console.log("key is pressed");
+    if (statusStoplicht == "groen") {
+      statusStoplicht = "oranje";
+      return;
+    }
+    if (statusStoplicht == "oranje") {
+      statusStoplicht = "rood";
+      return;
+    }
+    if (statusStoplicht == "rood") {
+      statusStoplicht = "groen";
+      return;
+    }
   }
 }
 
@@ -68,7 +70,7 @@ function draw() {
   circle(325 + 50, 130, 30);
   circle(325 + 50, 180, 30);
   circle(325 + 50, 220, 30);
-  
+
   if (statusStoplicht == "groen") {
     fill("green");
     circle(325 + 50, 220, 30);
