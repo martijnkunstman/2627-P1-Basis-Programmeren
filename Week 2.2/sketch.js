@@ -1,7 +1,23 @@
 let positieXvanAuto1 = 50;
 let timer = 0;
+let statusStoplicht = "groen";
 
-
+function keyPressed() {
+  // Code to run.
+  console.log("key is pressed");
+  if (statusStoplicht == "groen") {
+    statusStoplicht = "oranje";
+    return;
+  }
+  if (statusStoplicht == "oranje") {
+    statusStoplicht = "rood";
+    return;
+  }
+  if (statusStoplicht == "rood") {
+    statusStoplicht = "groen";
+    return;
+  }
+}
 
 
 function setup() {
@@ -13,9 +29,10 @@ function draw() {
 
 
   timer = timer + 1;
-  textSize(50);
+  textSize(20);
   fill("black");
-  text("timer:" + timer, 50, 50)
+  text("timer:" + timer, 50, 50);
+  text("statusStoplicht:" + statusStoplicht, 50, 80)
   fill("white");
   //auto 1
   rect(positieXvanAuto1, 100, 100, 50);
@@ -44,6 +61,27 @@ function draw() {
     fill("red");
     circle(325, 130, 30);
   }
+
+  ////- stoplicht 2
+  fill("white");
+  rect(300 + 50, 100, 50, 150,);
+  circle(325 + 50, 130, 30);
+  circle(325 + 50, 180, 30);
+  circle(325 + 50, 220, 30);
+  
+  if (statusStoplicht == "groen") {
+    fill("green");
+    circle(325 + 50, 220, 30);
+  }
+  if (statusStoplicht == "oranje") {
+    fill("orange");
+    circle(325 + 50, 180, 30);
+  }
+  if (statusStoplicht == "rood") {
+    fill("red");
+    circle(325 + 50, 130, 30);
+  }
+
 
   if (timer > 450) {
     timer = 0;
