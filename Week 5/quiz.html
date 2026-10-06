@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klassenquiz</title>
+<style>
+  :root {
+    --bg1: #3b2a8f;
+    --bg2: #7b3fe4;
+    --card: #ffffff;
+    --ink: #1e1b3a;
+    --muted: #6b6890;
+    --good: #1fae5b;
+    --bad: #e2373f;
+    --accent: #ffb703;
+    --opt-a: #4361ee;
+    --opt-b: #f72585;
+    --opt-c: #06a77d;
+    --opt-d: #ff8c00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .screen { display: none; width: 100%; max-width: 760px; }
+  .screen.active { display: block; animation: pop .35s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+
+  .card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  }
+
+  /* Start screen */
+  .start { text-align: center; }
+  .start .logo { font-size: 72px; margin-bottom: 8px; }
+  .start h1 { font-size: 2.6rem; margin-bottom: 8px; }
+  .start p { color: var(--muted); font-size: 1.1rem; margin-bottom: 24px; line-height: 1.5; }
+  .rules { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .rule { background: #f1effc; border-radius: 12px; padding: 10px 14px; font-size: .95rem; }
+  .btn {
+    border: none; cursor: pointer; font-weight: 700; font-size: 1.2rem;
+    padding: 16px 40px; border-radius: 999px; color: var(--ink);
+    background: var(--accent); box-shadow: 0 6px 0 #c98f00;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c98f00; }
+
+  /* Quiz header */
+  .topbar { display: flex; justify-content: space-between; align-items: center; color: #fff; margin-bottom: 12px; font-weight: 600; }
+  .score-pill { background: rgba(255,255,255,.2); padding: 8px 16px; border-radius: 999px; }
+  .progress { height: 10px; background: rgba(255,255,255,.25); border-radius: 999px; overflow: hidden; margin-bottom: 18px; }
+  .progress > div { height: 100%; background: var(--accent); width: 0; transition: width .4s ease; }
+
+  .author { color: var(--muted); font-size: .9rem; margin-bottom: 8px; }
+  .question { font-size: 1.6rem; font-weight: 700; margin-bottom: 24px; line-height: 1.3; }
+
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .answer {
+    position: relative; border: none; cursor: pointer; text-align: left;
+    color: #fff; font-size: 1.1rem; font-weight: 600;
+    padding: 20px 56px 20px 20px; border-radius: 16px; min-height: 80px;
+    display: flex; align-items: center; gap: 12px;
+    transition: transform .15s, opacity .3s, border-radius .3s, box-shadow .3s;
+  }
+  .answer:hover:not(:disabled) { transform: translateY(-3px); }
+  .answer:disabled { cursor: default; }
+  .answer .letter {
+    flex: none; width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,.25); display: grid; place-items: center; font-weight: 800;
+  }
+  .answer:nth-child(1) { background: var(--opt-a); }
+  .answer:nth-child(2) { background: var(--opt-b); }
+  .answer:nth-child(3) { background: var(--opt-c); }
+  .answer:nth-child(4) { background: var(--opt-d); }
+
+  /* Feedback: colour + shape */
+  .answer .mark {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%) scale(0);
+    width: 34px; height: 34px; display: grid; place-items: center;
+    font-size: 1.3rem; font-weight: 900; background: #fff;
+    transition: transform .3s cubic-bezier(.3,1.6,.5,1);
+  }
+  .answer.correct {
+    background: var(--good) !important;
+    border-radius: 40px;                 /* rounded pill = correct */
+    box-shadow: 0 0 0 5px #b8f0cf;
+    animation: bounce .5s ease;
+  }
+  .answer.correct .mark { color: var(--good); border-radius: 50%; transform: translateY(-50%) scale(1); }
+  .answer.wrong {
+    background: var(--bad) !important;
+    border-radius: 2px;                  /* sharp square = wrong */
+    box-shadow: 0 0 0 5px #ffc9cc;
+    animation: shake .45s ease;
+  }
+  .answer.wrong .mark { color: var(--bad); border-radius: 4px; transform: translateY(-50%) scale(1) rotate(0deg); }
+  .answer.faded { opacity: .35; }
+
+  @keyframes bounce { 0%,100% { transform: scale(1); } 40% { transform: scale(1.06); } 70% { transform: scale(.98); } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+
+  .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; min-height: 64px; }
+  .feedback { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .feedback .shape { width: 40px; height: 40px; display: grid; place-items: center; color: #fff; font-size: 1.3rem; }
+  .feedback.good { color: var(--good); }
+  .feedback.good .shape { background: var(--good); border-radius: 50%; }
+  .feedback.bad { color: var(--bad); }
+  .feedback.bad .shape { background: var(--bad); clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: 10px; }
+
+  .next {
+    width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--accent); box-shadow: 0 5px 0 #c98f00;
+    display: grid; place-items: center; visibility: hidden;
+    transition: transform .15s;
+  }
+  .next.show { visibility: visible; animation: pulse 1.4s infinite; }
+  .next:hover { transform: translateX(4px); }
+  .next svg { width: 30px; height: 30px; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 5px 0 #c98f00, 0 0 0 0 rgba(255,183,3,.6); } 50% { box-shadow: 0 5px 0 #c98f00, 0 0 0 12px rgba(255,183,3,0); } }
+
+  /* End screen */
+  .end { text-align: center; }
+  .end .big { font-size: 4rem; font-weight: 900; margin: 12px 0; }
+  .end p { color: var(--muted); font-size: 1.15rem; margin-bottom: 24px; }
+
+  @media (max-width: 560px) {
+    .card { padding: 22px; }
+    .answers { grid-template-columns: 1fr; }
+    .question { font-size: 1.3rem; }
+    .start h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- START -->
+<div class="screen active" id="startScreen">
+  <div class="card start">
+    <div class="logo">🧠</div>
+    <h1>Klassenquiz</h1>
+    <p>12 vragen, gemaakt door jouw klasgenoten.<br>Hoeveel heb jij er goed?</p>
+    <div class="rules">
+      <div class="rule">🔀 Antwoorden worden geschud</div>
+      <div class="rule">⭐ 1 punt per goed antwoord</div>
+      <div class="rule">➡️ Pijl voor de volgende vraag</div>
+    </div>
+    <button class="btn" id="startBtn">Start de quiz</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="screen" id="quizScreen">
+  <div class="topbar">
+    <span id="counter">Vraag 1 / 12</span>
+    <span class="score-pill">⭐ <span id="score">0</span></span>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="card">
+    <div class="author" id="author"></div>
+    <div class="question" id="question"></div>
+    <div class="answers" id="answers"></div>
+    <div class="footer">
+      <div class="feedback" id="feedback"></div>
+      <button class="next" id="nextBtn" aria-label="Volgende vraag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1e1b3a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- END -->
+<div class="screen" id="endScreen">
+  <div class="card end">
+    <div class="logo" id="endEmoji" style="font-size:72px">🏆</div>
+    <h1>Klaar!</h1>
+    <div class="big" id="finalScore">0 / 12</div>
+    <p id="endText"></p>
+    <button class="btn" id="restartBtn">Opnieuw spelen</button>
+  </div>
+</div>
+
+<script>
+// Eerste antwoord = het goede antwoord
+const QUESTIONS = [
+  { by: "Olin Lablans", q: "Wat is de hoofdstad van Australië?", a: ["Canberra", "Sydney", "Melbourne", "Australië"] },
+  { by: "Jazzley Bamberg", q: "What's the second unit you get in The Battle Cats?", a: ["Tank Cat", "Super Cat", "Tall Cat", "Catornado"] },
+  { by: "Sybren Jonkheid", q: 'Wat is "2"+"2"-"2"?', a: ['"20"', "2", '"2"', "ERR"] },
+  { by: "Niels Renger", q: "Wat is de maximale snelheid van een SGM (stadsgewestelijk materieel)?", a: ["125 km/h", "140 km/h", "100 km/h", "160 km/h"] },
+  { by: "Rens Koekoek", q: "Wat voor dimension komt er naar Minecraft?", a: ["The Sift", "The Aether", "The Farlands", "The Overworld"] },
+  { by: "Dylan Duikersloot", q: "Wat betekent de afkorting van de groepsnaam N.W.A.?", a: ["N*gga’s with attitudes", "Neon waterhead aliens", "No work allowed", "New world alliance"] },
+  { by: "Alex Pokanevych", q: "In which year did Constantinople fall to the Ottoman Empire?", a: ["1453", "1373", "1523", "1581"] },
+  { by: "Zayd Hamed", q: "What song is made by Kanye?", a: ["Devil in a New Dress", "Superman", "Let It Happen", "Wind"] },
+  { by: "Rowan Oud", q: "Wat betekent velociraptor?", a: ["Snelle dief", "Lenige rover", "Snelle hagedis", "Wrede rover"] },
+  { by: "Twan Lijkwan", q: "How do you brew a Potion of Healing II in Minecraft?", a: ["Nether wart, Glistering Melon, Glowstone", "Nether wart, Golden Carrot, Redstone", "Nether wart, Ghast tear, Glowstone", "Glistering Melon, Gunpowder, Redstone"] },
+  { by: "Matthijs Halewijn", q: "Met welk element begon de Avatarcyclus?", a: ["Vuur", "Lucht", "Water", "Aarde"] },
+  { by: "Jesse Bosse", q: "Op welke school zitten we?", a: ["GLU", "Technova", "Dulon", "ROC"] }
+];
+
+const $ = id => document.getElementById(id);
+let order = [], index = 0, score = 0, answered = false;
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+function start() {
+  order = shuffle(QUESTIONS.map((_, i) => i)); // ook de vragen in willekeurige volgorde
+  index = 0; score = 0;
+  $("score").textContent = 0;
+  show("quizScreen");
+  render();
+}
+
+function render() {
+  answered = false;
+  const item = QUESTIONS[order[index]];
+  $("counter").textContent = `Vraag ${index + 1} / ${QUESTIONS.length}`;
+  $("bar").style.width = `${(index / QUESTIONS.length) * 100}%`;
+  $("author").textContent = `Vraag van ${item.by}`;
+  $("question").textContent = item.q;
+  $("feedback").className = "feedback";
+  $("feedback").innerHTML = "";
+  $("nextBtn").classList.remove("show");
+
+  const options = shuffle(item.a.map((text, i) => ({ text, correct: i === 0 })));
+  const box = $("answers");
+  box.innerHTML = "";
+  options.forEach((opt, i) => {
+    const b = document.createElement("button");
+    b.className = "answer";
+    b.dataset.correct = opt.correct;
+    b.innerHTML = `<span class="letter">${"ABCD"[i]}</span><span></span><span class="mark"></span>`;
+    b.children[1].textContent = opt.text;
+    b.addEventListener("click", () => choose(b));
+    box.appendChild(b);
+  });
+}
+
+function choose(btn) {
+  if (answered) return;
+  answered = true;
+  const buttons = [...document.querySelectorAll(".answer")];
+  const isRight = btn.dataset.correct === "true";
+
+  buttons.forEach(b => {
+    b.disabled = true;
+    if (b.dataset.correct === "true") {
+      b.classList.add("correct");
+      b.querySelector(".mark").textContent = "✓";
+    } else if (b === btn) {
+      b.classList.add("wrong");
+      b.querySelector(".mark").textContent = "✗";
+    } else {
+      b.classList.add("faded");
+    }
+  });
+
+  const fb = $("feedback");
+  if (isRight) {
+    score++;
+    $("score").textContent = score;
+    fb.className = "feedback good";
+    fb.innerHTML = `<span class="shape">✓</span> Goed zo!`;
+  } else {
+    fb.className = "feedback bad";
+    fb.innerHTML = `<span class="shape">!</span> Helaas, fout`;
+  }
+  $("bar").style.width = `${((index + 1) / QUESTIONS.length) * 100}%`;
+  $("nextBtn").classList.add("show");
+}
+
+function next() {
+  if (!answered) return;
+  index++;
+  if (index < QUESTIONS.length) render();
+  else finish();
+}
+
+function finish() {
+  const total = QUESTIONS.length;
+  const pct = score / total;
+  $("finalScore").textContent = `${score} / ${total}`;
+  let emoji = "🏆", text = "Wow, alles of bijna alles goed. Quizkampioen!";
+  if (pct < 0.9) { emoji = "🎉"; text = "Heel goed gedaan!"; }
+  if (pct < 0.6) { emoji = "👍"; text = "Niet slecht! Probeer het nog een keer."; }
+  if (pct < 0.3) { emoji = "🤔"; text = "Dat was lastig. Nog een poging?"; }
+  $("endEmoji").textContent = emoji;
+  $("endText").textContent = text;
+  show("endScreen");
+}
+
+$("startBtn").addEventListener("click", start);
+$("restartBtn").addEventListener("click", start);
+$("nextBtn").addEventListener("click", next);
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" && $("quizScreen").classList.contains("active")) next();
+});
+</script>
+</body>
+</html>
